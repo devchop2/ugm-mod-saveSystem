@@ -168,10 +168,6 @@ Save On Quit     : ✓
 
 이게 전부. 게임 실행하고 인벤토리 변경 → 30초 후 자동 저장 → 재시작 → 데이터 복원.
 
-### 동작 확인용 샘플
-
-`Assets/Samples/SaveSystem/QuickStart/` 에 더 풍부한 예제(Inventory + PlayerStats + Vector3 RespawnPoint + List<string> Achievements)가 있어. 그대로 가져다 쓰거나 패턴만 참고.
-
 ---
 
 ## API 레퍼런스
@@ -505,8 +501,6 @@ public class PlayerStats : MonoBehaviour
 SaveManager.Register("Stats", () => stats.ToSnapshot(), s => stats.CopyFrom(s));
 ```
 
-샘플 `Assets/Samples/SaveSystem/QuickStart/PlayerStats.cs` 에 이 패턴이 들어있습니다.
-
 ---
 
 ## IL2CPP / 모바일 빌드 주의
@@ -589,43 +583,46 @@ MessagePack은 바이너리라 메모장으론 안 보임. 디버그용 `JsonCod
 
 ---
 
-## 프로젝트 구조
+## 프로젝트 구조 (UPM 패키지)
 
 ```
-Assets/UGM/SaveSystem/
+com.chopchopgames.ugm.savesystem/        ← 패키지 루트
+├── package.json                         ← UPM 매니페스트
+├── CHANGELOG.md
+├── README.md
+├── LICENSE, THIRD_PARTY_NOTICES.md
+├── dependencies.json                    ← MessagePack 자동 다운로드 매니페스트
 ├── Runtime/
 │   ├── Core/
-│   │   ├── SaveManager.cs              ← 진입점 (정적 클래스, 사용자가 호출하는 모든 API)
-│   │   ├── SaveEnvelope.cs             ← 중간 데이터 컨테이너
-│   │   ├── ISaveAggregator.cs          ← Stage 1 인터페이스
-│   │   ├── ISaveCodec.cs               ← Stage 2 인터페이스
-│   │   ├── IStorageProvider.cs         ← Stage 3 인터페이스
-│   │   ├── AutoSaveScheduler.cs        ← 인터벌 자동저장 컴포넌트
+│   │   ├── SaveManager.cs               ← 진입점 (정적 클래스, 사용자가 호출하는 모든 API)
+│   │   ├── SaveEnvelope.cs              ← 중간 데이터 컨테이너
+│   │   ├── ISaveAggregator.cs           ← Stage 1 인터페이스
+│   │   ├── ISaveCodec.cs                ← Stage 2 인터페이스
+│   │   ├── IStorageProvider.cs          ← Stage 3 인터페이스
+│   │   ├── AutoSaveScheduler.cs         ← 인터벌 자동저장 컴포넌트
 │   │   └── NoSaveAttribute.cs
 │   ├── Aggregator/
-│   │   └── DefaultAggregator.cs        ← 슬롯 등록 + dirty 캐싱
+│   │   └── DefaultAggregator.cs         ← 슬롯 등록 + dirty 캐싱
 │   ├── Codec/
-│   │   ├── MessagePackCodec.cs         ← 디폴트 코덱
-│   │   └── SaveFileHeader.cs           ← 매직/CRC 헤더 유틸
+│   │   ├── MessagePackCodec.cs          ← 디폴트 코덱
+│   │   └── SaveFileHeader.cs            ← 매직/CRC 헤더 유틸
 │   ├── Resolvers/
-│   │   └── UnityResolver.cs            ← Vector3 등 Unity 타입
+│   │   └── UnityResolver.cs             ← Vector3 등 Unity 타입
 │   ├── Providers/
-│   │   └── LocalFileProvider.cs        ← persistentDataPath 저장
+│   │   └── LocalFileProvider.cs         ← persistentDataPath 저장
 │   └── UGM.SaveSystem.asmdef
-├── Editor/
-│   ├── Dependencies/
-│   │   ├── DependencyInstaller.cs      ← 첫 임포트 시 NuGet 다운로드
-│   │   └── DependencyManifest.cs
-│   └── UGM.SaveSystem.Editor.asmdef
-├── Plugins/                             ← MessagePack DLL 자동 다운로드 위치
-└── dependencies.json                    ← 의존성 매니페스트
+└── Editor/
+    ├── Dependencies/
+    │   ├── DependencyInstaller.cs       ← 첫 임포트 시 NuGet 다운로드
+    │   └── DependencyManifest.cs
+    └── UGM.SaveSystem.Editor.asmdef
 
-Assets/Samples/SaveSystem/
-└── QuickStart/                          ← 그대로 가져다 써도 되는 예제
-    ├── Inventory.cs
-    ├── PlayerStats.cs
-    ├── ItemData.cs
-    └── SaveBoot.cs
+사용자 프로젝트 쪽 (자동 생성):
+Assets/Plugins/UGM/SaveSystem/           ← 첫 임포트 시 DLL 자동 배치
+├── MessagePack.dll
+├── MessagePack.Annotations.dll
+├── Microsoft.Bcl.AsyncInterfaces.dll
+└── System.Threading.Tasks.Extensions.dll
 ```
 
 ### 수동 의존성 설치

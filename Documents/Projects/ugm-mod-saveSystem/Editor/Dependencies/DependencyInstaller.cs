@@ -11,17 +11,32 @@ using UnityEngine;
 namespace UGM.SaveSystem.EditorTools.Dependencies
 {
     /// <summary>
-    /// Reads <c>Assets/UGM/SaveSystem/dependencies.json</c> on editor load and
-    /// downloads any missing or version-mismatched binaries (Google.FlatBuffers
-    /// DLL, flatc executable, …). Both NuGet packages and GitHub release assets
-    /// are handled by the same code path, so adding a third dependency is just
-    /// one more entry in the JSON.
+    /// Reads <c>dependencies.json</c> from the package root on editor load and
+    /// downloads any missing or version-mismatched binaries (MessagePack DLLs).
+    /// Both NuGet packages and GitHub release assets are handled by the same
+    /// code path, so adding a new dependency is just one more entry in the JSON.
     ///
+    /// <para>
+    /// Package-root discovery uses the Editor asmdef as anchor — no hardcoded
+    /// path. Works whether the module is installed as a UPM Git package
+    /// (Packages/com.chopchopgames.ugm.savesystem/) or embedded inside the
+    /// project's Assets folder.
+    /// </para>
+    ///
+    /// <para>
+    /// All downloaded binaries land in <c>Assets/Plugins/UGM/SaveSystem/</c>
+    /// (a mutable, user-side location). The package folder itself is immutable
+    /// when installed via UPM Git URL, so writing dependencies inside the
+    /// package would silently fail on real user setups.
+    /// </para>
+    ///
+    /// <para>
     /// On-disk install state is tracked with a sidecar file next to each
-    /// destination — e.g. <c>Google.FlatBuffers.dll.version</c> contains
-    /// "23.5.26". When the manifest version changes, the sidecar mismatches and
+    /// destination — e.g. <c>MessagePack.dll.version</c> contains the version
+    /// string. When the manifest version changes, the sidecar mismatches and
     /// the installer reinstalls. No central state file, nothing to gitignore
     /// per-dev — it just works the same on every machine.
+    /// </para>
     ///
     /// First-run UX: a single confirmation dialog summarizes everything that
     /// will be downloaded; user approves once, all installs run, AssetDatabase
@@ -30,8 +45,8 @@ namespace UGM.SaveSystem.EditorTools.Dependencies
     [InitializeOnLoad]
     public static class DependencyInstaller
     {
-        const string ManifestPath = "Assets/UGM/SaveSystem/dependencies.json";
         const string LogTag       = "[UGM.SaveSystem]";
+        const string EditorAsmdef = "UGM.SaveSystem.Editor.asmdef";
 
         static DependencyInstaller()
         {
@@ -80,6 +95,7 @@ namespace UGM.SaveSystem.EditorTools.Dependencies
             foreach (var m in missing)
                 summary.AppendLine($"• {m.Entry.id} {m.Entry.version}");
             summary.AppendLine("\n지금 자동으로 다운로드할까요?");
+            summary.AppendLine($"\n저장 위치: {DefaultDestinationRoot}");
 
             var ok = EditorUtility.DisplayDialog(
                 "UGM.SaveSystem — Dependencies",
@@ -96,6 +112,36 @@ namespace UGM.SaveSystem.EditorTools.Dependencies
             InstallEntries(missing);
         }
 
+        // ── Package-root + manifest discovery ────────────────────────────────
+
+        /// <summary>
+        /// Where downloaded DLLs land — a mutable, user-side location that
+        /// survives UPM upgrades and is auto-imported by Unity.
+        /// </summary>
+        public const string DefaultDestinationRoot = "Assets/Plugins/UGM/SaveSystem";
+
+        /// <summary>
+        /// Find the package root by locating our Editor asmdef. Returns null if
+        /// the asmdef can't be found (project not yet imported, or someone
+        /// renamed the asmdef).
+        /// </summary>
+        static string FindPackageRoot()
+        {
+            var guids = AssetDatabase.FindAssets("t:AssemblyDefinitionAsset");
+            foreach (var guid in guids)
+            {
+                var path = AssetDatabase.GUIDToAssetPath(guid);
+                if (path.EndsWith("/" + EditorAsmdef, StringComparison.Ordinal)
+                    || path.EndsWith("\\" + EditorAsmdef, StringComparison.Ordinal))
+                {
+                    var editorDir   = Path.GetDirectoryName(path);          // <root>/Editor
+                    var packageRoot = Path.GetDirectoryName(editorDir);     // <root>
+                    return packageRoot?.Replace('\\', '/');
+                }
+            }
+            return null;
+        }
+
         // ── Resolution ──────────────────────────────────────────────────────
 
         class ResolvedInstall
@@ -109,19 +155,26 @@ namespace UGM.SaveSystem.EditorTools.Dependencies
 
         static DependencyManifest LoadManifest()
         {
-            if (!File.Exists(ManifestPath))
+            var root = FindPackageRoot();
+            if (root == null)
             {
-                Debug.LogWarning($"{LogTag} Manifest not found at {ManifestPath}; skipping dependency install.");
+                // Don't spam — early in import the asmdef may not be visible yet.
+                return null;
+            }
+            var manifestPath = root + "/dependencies.json";
+            if (!File.Exists(manifestPath))
+            {
+                Debug.LogWarning($"{LogTag} Manifest not found at {manifestPath}; skipping dependency install.");
                 return null;
             }
             try
             {
-                var json = File.ReadAllText(ManifestPath);
+                var json = File.ReadAllText(manifestPath);
                 return JsonUtility.FromJson<DependencyManifest>(json);
             }
             catch (Exception e)
             {
-                Debug.LogError($"{LogTag} Failed to parse {ManifestPath}: {e.Message}");
+                Debug.LogError($"{LogTag} Failed to parse {manifestPath}: {e.Message}");
                 return null;
             }
         }
@@ -149,14 +202,14 @@ namespace UGM.SaveSystem.EditorTools.Dependencies
             switch (dep.kind)
             {
                 case "nuget":
-                    if (string.IsNullOrEmpty(dep.package) || string.IsNullOrEmpty(dep.destination))
-                        throw new Exception($"nuget entry '{dep.id}' missing package/destination.");
+                    if (string.IsNullOrEmpty(dep.package))
+                        throw new Exception($"nuget entry '{dep.id}' missing 'package' field.");
                     return new ResolvedInstall
                     {
                         Entry        = dep,
                         DownloadUrl  = $"https://www.nuget.org/api/v2/package/{dep.package}/{dep.version}",
                         ExtractPath  = dep.extract,
-                        Destination  = dep.destination,
+                        Destination  = ResolveDestination(dep.destination, dep.extract),
                     };
 
                 case "github-release":
@@ -169,13 +222,28 @@ namespace UGM.SaveSystem.EditorTools.Dependencies
                         Platform     = pf,
                         DownloadUrl  = $"https://github.com/{dep.repo}/releases/download/{dep.tag}/{pf.asset}",
                         ExtractPath  = pf.extract,
-                        Destination  = pf.destination,
+                        Destination  = ResolveDestination(pf.destination, pf.extract),
                     };
 
                 default:
                     Debug.LogError($"{LogTag} Unknown dependency kind '{dep.kind}' for entry '{dep.id}'.");
                     return null;
             }
+        }
+
+        /// <summary>
+        /// Take the manifest's destination string. If empty, fall back to
+        /// <see cref="DefaultDestinationRoot"/> + the file name from the
+        /// extract path. This lets manifests omit per-entry destination
+        /// boilerplate when the default location is fine.
+        /// </summary>
+        static string ResolveDestination(string declared, string extractPath)
+        {
+            if (!string.IsNullOrEmpty(declared)) return declared;
+            var fileName = Path.GetFileName(extractPath);
+            if (string.IsNullOrEmpty(fileName))
+                throw new Exception("Cannot infer destination — both 'destination' and 'extract' are empty.");
+            return DefaultDestinationRoot + "/" + fileName;
         }
 
         static bool IsUpToDate(ResolvedInstall r)
@@ -257,12 +325,11 @@ namespace UGM.SaveSystem.EditorTools.Dependencies
             {
                 using (var wc = new WebClient())
                 {
-                    // GitHub redirects releases to S3; WebClient follows redirects by default.
                     wc.Headers[HttpRequestHeader.UserAgent] = "UGM.SaveSystem/DependencyInstaller";
                     wc.DownloadFile(r.DownloadUrl, temp);
                 }
 
-                // Both .nupkg and the flatc release archives are zip files.
+                // Both .nupkg and the GitHub release archives are zip files.
                 using (var zip = ZipFile.OpenRead(temp))
                 {
                     var entry = FindEntry(zip, r.ExtractPath);
@@ -303,7 +370,7 @@ namespace UGM.SaveSystem.EditorTools.Dependencies
                 string.Equals(e.FullName, wanted, StringComparison.OrdinalIgnoreCase));
             if (exact != null) return exact;
 
-            // Filename match anywhere in the archive (handles "release-folder/flatc.exe").
+            // Filename match anywhere in the archive (handles "release-folder/leaf.dll").
             var leaf = Path.GetFileName(wanted);
             return zip.Entries.FirstOrDefault(e =>
                 string.Equals(Path.GetFileName(e.FullName), leaf, StringComparison.OrdinalIgnoreCase));

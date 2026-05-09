@@ -1,0 +1,20 @@
+{
+  "name": "com.chopchopgames.ugm.savesystem",
+  "version": "0.1.0",
+  "displayName": "UGM SaveSystem",
+  "description": "MessagePack 기반 유저 데이터 저장 모듈. 게임 클래스를 건드리지 않고 부팅 시점에 슬롯만 등록하면 한 파일로 자동 저장. 사용자 코드 결합도 0의 3-스테이지 파이프라인 (Aggregator → Codec → Provider). 큰 데이터 + 30초 자동저장 시나리오에 적합 (백그라운드 인코딩, dirty 슬롯 캐싱). 파일 헤더 + CRC32로 손상 자동 검출, forward-compat 슬롯 보존. 외부 의존성(MessagePack DLL)은 첫 임포트 시 NuGet에서 자동 다운로드.",
+  "unity": "6000.0",
+  "documentationUrl": "https://github.com/devchop2/ugm-mod-saveSystem",
+  "dependencies": {},
+  "keywords": [
+    "ugm",
+    "save",
+    "savesystem",
+    "messagepack",
+    "serialization",
+    "persistence"
+  ],
+  "author": {
+    "name": "ChopChopGames"
+  }
+}

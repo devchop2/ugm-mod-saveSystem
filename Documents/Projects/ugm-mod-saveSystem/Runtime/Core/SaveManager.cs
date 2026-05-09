@@ -179,41 +179,4 @@ namespace UGM.SaveSystem
             // setters often touch scene objects.
             Aggregator.Apply(envelope, Codec);
 
-            LastLoadedFormatVersion = header.FormatVersion;
-            LastSavedAtUnix         = envelope.SavedAtUnix;
-            HasLoaded = true;
-            return true;
-        }
-
-        /// <summary>Delete the on-disk save file. No-op if it doesn't exist.</summary>
-        public static Task DeleteAsync(string fileName = null) =>
-            Provider.DeleteAsync(ResolveFileName(fileName));
-
-        /// <summary>True iff a save file with this name (or default) currently exists on disk.</summary>
-        public static Task<bool> ExistsAsync(string fileName = null) =>
-            Provider.ExistsAsync(ResolveFileName(fileName));
-
-        // ── Test / hot-reload helper ─────────────────────────────────────────
-
-        /// <summary>
-        /// Drop all registrations, settings, and diagnostics back to defaults.
-        /// Intended for unit tests and editor hot-reload scenarios — not for
-        /// production gameplay (you'd lose every Register call).
-        /// </summary>
-        public static void Reset()
-        {
-            _aggregator = null;
-            _codec = null;
-            _provider = null;
-            _defaultFileName = "save.dat";
-            LastLoadedFormatVersion = 0;
-            LastSavedAtUnix = 0;
-            HasLoaded = false;
-        }
-
-        // ── Internals ────────────────────────────────────────────────────────
-
-        private static string ResolveFileName(string explicitName) =>
-            string.IsNullOrEmpty(explicitName) ? _defaultFileName : explicitName;
-    }
-}
+            LastLoadedForma

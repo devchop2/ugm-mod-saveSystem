@@ -1,5 +1,6 @@
 {
   "schemaVersion": 1,
+  "_comment": "All downloads land under Assets/Plugins/UGM/SaveSystem/ — a mutable user-side location, since UPM Git packages are immutable.",
   "dependencies": [
     {
       "id": "MessagePack",
@@ -7,7 +8,7 @@
       "kind": "nuget",
       "package": "MessagePack",
       "extract": "lib/netstandard2.0/MessagePack.dll",
-      "destination": "Assets/UGM/SaveSystem/Plugins/MessagePack.dll",
+      "destination": "Assets/Plugins/UGM/SaveSystem/MessagePack.dll",
       "repo": "",
       "tag": "",
       "platforms": []
@@ -18,7 +19,7 @@
       "kind": "nuget",
       "package": "MessagePack.Annotations",
       "extract": "lib/netstandard2.0/MessagePack.Annotations.dll",
-      "destination": "Assets/UGM/SaveSystem/Plugins/MessagePack.Annotations.dll",
+      "destination": "Assets/Plugins/UGM/SaveSystem/MessagePack.Annotations.dll",
       "repo": "",
       "tag": "",
       "platforms": []
@@ -29,7 +30,7 @@
       "kind": "nuget",
       "package": "Microsoft.Bcl.AsyncInterfaces",
       "extract": "lib/netstandard2.0/Microsoft.Bcl.AsyncInterfaces.dll",
-      "destination": "Assets/UGM/SaveSystem/Plugins/Microsoft.Bcl.AsyncInterfaces.dll",
+      "destination": "Assets/Plugins/UGM/SaveSystem/Microsoft.Bcl.AsyncInterfaces.dll",
       "repo": "",
       "tag": "",
       "platforms": []
@@ -40,7 +41,7 @@
       "kind": "nuget",
       "package": "System.Threading.Tasks.Extensions",
       "extract": "lib/netstandard2.0/System.Threading.Tasks.Extensions.dll",
-      "destination": "Assets/UGM/SaveSystem/Plugins/System.Threading.Tasks.Extensions.dll",
+      "destination": "Assets/Plugins/UGM/SaveSystem/System.Threading.Tasks.Extensions.dll",
       "repo": "",
       "tag": "",
       "platforms": []
