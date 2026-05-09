@@ -1,0 +1,49 @@
+{
+  "schemaVersion": 1,
+  "dependencies": [
+    {
+      "id": "MessagePack",
+      "version": "2.5.187",
+      "kind": "nuget",
+      "package": "MessagePack",
+      "extract": "lib/netstandard2.0/MessagePack.dll",
+      "destination": "Assets/UGM/SaveSystem/Plugins/MessagePack.dll",
+      "repo": "",
+      "tag": "",
+      "platforms": []
+    },
+    {
+      "id": "MessagePack.Annotations",
+      "version": "2.5.187",
+      "kind": "nuget",
+      "package": "MessagePack.Annotations",
+      "extract": "lib/netstandard2.0/MessagePack.Annotations.dll",
+      "destination": "Assets/UGM/SaveSystem/Plugins/MessagePack.Annotations.dll",
+      "repo": "",
+      "tag": "",
+      "platforms": []
+    },
+    {
+      "id": "Microsoft.Bcl.AsyncInterfaces",
+      "version": "8.0.0",
+      "kind": "nuget",
+      "package": "Microsoft.Bcl.AsyncInterfaces",
+      "extract": "lib/netstandard2.0/Microsoft.Bcl.AsyncInterfaces.dll",
+      "destination": "Assets/UGM/SaveSystem/Plugins/Microsoft.Bcl.AsyncInterfaces.dll",
+      "repo": "",
+      "tag": "",
+      "platforms": []
+    },
+    {
+      "id": "System.Threading.Tasks.Extensions",
+      "version": "4.5.4",
+      "kind": "nuget",
+      "package": "System.Threading.Tasks.Extensions",
+      "extract": "lib/netstandard2.0/System.Threading.Tasks.Extensions.dll",
+      "destination": "Assets/UGM/SaveSystem/Plugins/System.Threading.Tasks.Extensions.dll",
+      "repo": "",
+      "tag": "",
+      "platforms": []
+    }
+  ]
+}
